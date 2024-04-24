@@ -1,5 +1,5 @@
 use crate::args::CargoNxBuild;
-use cargo_metadata::{Artifact, Message, MetadataCommand, Package};
+use cargo_metadata::{Artifact, Message, MetadataCommand};
 use linkle::format::{
     nacp::Nacp,
     npdm::{AcidBehavior, Npdm},
@@ -234,4 +234,6 @@ pub fn handle_build(args: CargoNxBuild) {
             }
         }
     }
+
+    std::process::exit(command.wait().expect("failed to get exit code").code().unwrap_or(1))
 }
