@@ -57,6 +57,9 @@ pub struct CargoNxBuild {
     /// The custom target triple to use, if any.
     #[clap(short, long)]
     pub target: Option<String>,
+    /// The package to build (if multiple are available)
+    #[clap(short='k', long)]
+    pub package: Option<String>,
     /// Displays extra information during the build process.
     #[clap(short, long)]
     pub verbose: bool,

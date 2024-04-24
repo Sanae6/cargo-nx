@@ -131,7 +131,21 @@ pub fn handle_build(args: CargoNxBuild) {
         .exec()
         .unwrap();
 
-    let metadata_v = &metadata.packages[0].metadata;
+    let (metadata_v, manifest_path) = if let Some(ref package) = args.package {
+        let package = &metadata
+            .packages
+            .iter()
+            .find(|v| v.name == *package)
+            .expect("Package not found");
+        
+        (&package.metadata, package.manifest_path.parent())
+    } else {
+        if metadata.packages.len() > 1 {
+            panic!("Multiple packages found, please specify one with --package");
+        }
+
+        (&metadata.packages[0].metadata, metadata.packages[0].manifest_path.parent())
+    };
 
     let is_nsp = metadata_v.pointer("/nx/nsp").is_some();
     let is_nro = metadata_v.pointer("/nx/nro").is_some();
@@ -172,6 +186,11 @@ pub fn handle_build(args: CargoNxBuild) {
         build_args.push(String::from("--release"));
     }
 
+    if let Some(package) = args.package {
+        build_args.push(String::from("--package"));
+        build_args.push(package);
+    }
+
     let mut command = Command::new("cargo")
         .args(&build_args)
         .stdout(Stdio::piped())
@@ -187,16 +206,7 @@ pub fn handle_build(args: CargoNxBuild) {
                 if artifact.target.kind.contains(&"bin".into())
                     || artifact.target.kind.contains(&"cdylib".into())
                 {
-                    let package: &Package = match metadata
-                        .packages
-                        .iter()
-                        .find(|v| v.id == artifact.package_id)
-                    {
-                        Some(v) => v,
-                        None => continue,
-                    };
-
-                    let root = package.manifest_path.parent().unwrap();
+                    let root = manifest_path.unwrap();
 
                     if is_nsp {
                         let nsp_metadata: NspMetadata =
